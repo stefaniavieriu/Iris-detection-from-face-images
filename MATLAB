@@ -1,0 +1,127 @@
+cl
+clearall
+closedall
+% EyeDetect is a variable that will have the value given by the return
+% function called with parameter 'EyePairBig'
+EyeDetect=vision.CascadeObjectDetector('EyePairBig');
+%reading the image stored on the device
+I=imread('D:\licenta\eye3.jpg');
+%The image given by the user in the format is stored in the igray variable
+% black and white
+igray=rgb2gray(I);
+%The eye area is stored in the BB variable
+BB=step(EyeDetect,igray);
+%The cropped image is stored in the Eyes variable
+Eyes=imcrop(igray,BB);
+% Image binarization
+imshow(Eyes);
+title("The eyes");
+BW = binarize(Eyes,0.4);
+figures
+imshow(BW);
+title("Image binarization (black and white)");
+
+imwrite(BW,"BW.png");
+% Framing the eye area
+% The strel function with the disk parameter will create a disk-shaped figure with a radius
+% equals two
+se = strel('disc',2);
+closeBW = imclose(BW,se);
+figures
+imshow(closeBW);
+title("Application of closing process");
+imwrite(closeBW,"closeBW.png");
+% A median filter is applied to the image to reduce noise
+filter1 = medfilt2(closeBW);
+figures
+imshow(filter1);
+title("Noise Removal");
+imwrite(filter1,"filter1.png");
+% creates a disc-shaped structuring element, where 2 specifies the radius
+se3 = strel('disc',2);
+%imerode function erodes the stored image after filtering it
+%remove pixels from object boundaries
+er1=imerode(filter1,se3);
+figures
+
+imshow(er1);
+title("Erosion process application");
+imwrite(er1,"er1.png");
+%the bwareaopen function removes parts of the image that are less than 30 de
+%pixels
+open = bwareopen(er1,30);
+figures
+imshow(open);
+title("Opening process application");
+imwrite(open,"Opening process application.png");
+The function %imcomplement transforms into a negative image in the open variable
+neg = incomplete(open);
+figures
+imshow(neg);
+title("Negative Image");
+imwrite(neg,"Negative_image.png");
+%fills the gaps projected due to the light from the iris
+fill = imfill(neg,'holes');
+figures
+imshow(fill);
+title("Filling in the Gaps");
+imwrite(fill,"Filling the gaps.png");
+%A median filter is applied to the image stored in the fill ce ia variable
+% as the image value with inverted colors from the neg variable
+filter2 = medfilt2(fill);
+
+figures
+imshow(filter2);
+title("Noise Removal");
+imwrite(filter2,"Noise Removal.png");
+%
+se4 = strel('disc',4);
+er2=imerode(filter2,se4);
+figures
+imshow(er2);
+title("Noise Removal");
+imwrite(er2,"Noise Removal.png");
+subplot(3,4,1),imshow(I)
+title('Original Image')
+subplot(3,4,2),imshow(igray)
+title('Image converted to black and white')
+rectangle ('Position'BB'LineWidth',4,'Line Style','-','EdgeColor','b');
+subplot(3,4,3),imshow(Eyes)
+title('cropped image')
+subplot(3,4,4),imshow(BW)
+title('Crop image binarization')
+subplot(3,4,5),imshow(closeBW)
+title("Application of closing process")
+subplot(3,4,6),imshow(filter1)
+title('Noise Removal')
+subplot(3,4,7),imshow(er1)
+
+title('Erosion process application')
+subplot(3,4,8),imshow(open)
+title('Opening process application')
+subplot(3,4,9),imshow(neg)
+title('Negative Image')
+subplot(3,4,10),imshow(fill)
+title('Filling in the gaps')
+subplot(3,4,11),imshow(filter2)
+title('Noise Removal')
+subplot(3,4,12),imshow(er2)
+title('Application of the erosion process')
+% In BB1, the eyes will be stored from the initial image
+BB1=step(EyeDetect,I);
+Eyes1=imcrop(I,BB1);
+[rows, columns, numberOfColorChannels] = size(Eyes1);
+%Eye framing
+righteye = Eyes1(1:end, 1:round(columns/2), :);
+lefteye = Eyes1(1:end, round(columns/2):end, :);
+%With the imfindcircle function, the pupil that was framed is searched for in the image
+%above
+[centers,radii] = imfindcircles(er2,[30 120],'ObjectPolarity','bright',...
+'Sensitivity',0.92)
+%Pupil detection
+figure,imshow(Eyes1)
+
+title('Iris detected')
+%the viscrircles function creates a circle with center and radius stored above with
+%imfindcircles function
+h = viscircles(centers, radii);
